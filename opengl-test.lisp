@@ -59,12 +59,13 @@
     (gl:vertex-attrib-pointer vertex-pos-location 3 :float nil 0 (cffi:null-pointer))
     vao))
 
-(defun render (triangle-vao shader-prog)
+(defun render (triangle-vao shader-prog mat-location)
   (gl:clear :color-buffer :depth-buffer)
   (gl:use-program shader-prog)
   (gl:bind-vertex-array triangle-vao)
-  (gl:uniformf (gl:get-uniform-location shader-prog "x_offset")
-               (sin (glfw:get-time)))
+  (let ((time (sin (glfw:get-time))))
+    (gl:uniform-matrix-4fv mat-location
+                           (marr (mtranslation (vec 0 time 0)))))
   (gl:draw-arrays :triangles 0 3))
 
 (defparameter *running* nil)
@@ -79,13 +80,14 @@
       (glfw:set-window-size-callback 'update-viewport)
       (gl:viewport 0 0 600 400)
       (gl:clear-color 0.2 0.2 0.2 0.2)
-      (let ((shader-prog (load-shader "shader.vert" "shader.frag"))
-            (triangle-vao (init-triangle)))
+      (let* ((shader-prog (load-shader "shader.vert" "shader.frag"))
+             (triangle-vao (init-triangle))
+             (mat-location (gl:get-uniform-location shader-prog "mat")))
         (loop
            while (and
                   *running*
                   (not (glfw:window-should-close-p)))
            do (progn
-                (render triangle-vao shader-prog)
+                (render triangle-vao shader-prog mat-location)
                 (glfw:swap-buffers)
                 (glfw:poll-events)))))))

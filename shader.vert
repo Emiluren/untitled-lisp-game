@@ -2,9 +2,8 @@
 
 layout (location = 0) in vec3 vertex_pos;
 
-uniform float x_offset;
+uniform mat4 mat;
 
 void main() {
-    gl_Position.xyz = vertex_pos + vec3(x_offset, 0, 0);
-    gl_Position.w = 1.0;
+    gl_Position = mat * vec4(vertex_pos, 1.0);
 }
