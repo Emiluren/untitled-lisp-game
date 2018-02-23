@@ -1,9 +1,5 @@
 ;;;; package.lisp
 
-(defpackage #:opengl-test
-  (:use #:cl
-        #:3d-vectors
-        #:3d-matrices
-        #:alexandria
-        #:trivial-main-thread))
-
+(uiop:define-package untitled-lisp-game
+    (:use #:cl #:cepl #:rtg-math
+          :livesupport))
