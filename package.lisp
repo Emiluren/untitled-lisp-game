@@ -1,7 +1,7 @@
 ;;;; package.lisp
 
 (uiop:define-package untitled-lisp-game
-    (:use #:cl #:cepl #:rtg-math #:skitter
+    (:use #:cl #:cepl #:rtg-math
           :livesupport))
 
 (uiop:define-package :untitled-lisp-game.model-parsers
