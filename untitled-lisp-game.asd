@@ -14,5 +14,5 @@
   :serial t
   :components ((:file "package")
                (:file "untitled-lisp-game")
-               (:file "model-parsers")))
+               (:file "meshes")))
 
