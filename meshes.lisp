@@ -27,7 +27,7 @@
     (declare (type (simple-array sampler) samplers))
     (dolist (part parts)
       (map-g #'mesh-prog (gstream part)
-             :mat (m4:* (m4:rotation-y 3.14)
+             :mat (m4:* (m4:rotation-y 2.6)
                         (m4:rotation-x (/ -3.14 2)))
              :tex (aref samplers (texture-index part))))))
 
@@ -40,7 +40,9 @@
                    :texture-index (material-index mesh-data))))
 
 (defun load-file (file-path)
-  (let ((scene (ai:import-into-lisp file-path)))
+  (let ((scene (ai:import-into-lisp file-path
+                                    :processing-flags '(:ai-process-flip-u-vs
+                                                        :ai-process-flip-winding-order))))
     (make-instance 'mesh
                    :parts (mapcar #'mesh-data->mesh-part (scene-meshes->gpu scene))
                    :samplers (map 'vector #'load-texture (scene->texture-files scene)))))
