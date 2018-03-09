@@ -2,18 +2,18 @@
 
 (defclass mesh-part ()
   ((gstream :initarg :gstream :accessor gstream)
-   (texture-index :initform 0 :initarg :material :accessor material)))
+   (texture-index :initform 0 :initarg :texture-index :accessor texture-index)))
 
 (defclass mesh ()
   ((parts :initform () :initarg :parts :accessor parts)
-   (textures :initform () :initarg textures :accessor textures)))
+   (samplers :initform #() :initarg :samplers :accessor samplers)))
 
 (defun-g vert ((vert g-pt) &uniform (mat :mat4))
   (values (* mat (v! (pos vert) 70))
           (tex vert)))
 
-(defun-g frag ((tex :vec2))
-  (v! tex 1.0 1.0))
+(defun-g frag ((tc :vec2) &uniform (tex :sampler-2d))
+  (texture tex tc))
 
 (defpipeline-g mesh-prog ()
   (vert g-pt)
@@ -23,19 +23,24 @@
   (:documentation "Render a mesh"))
 
 (defmethod render ((m mesh))
-  (with-slots (parts textures) m
-    (declare (ignore textures))
+  (with-slots (parts samplers) m
+    (declare (type (simple-array sampler) samplers))
     (dolist (part parts)
-      (map-g #'mesh-prog (gstream part) :mat (m4:rotation-x (/ -3.14 2))))))
+      (map-g #'mesh-prog (gstream part)
+             :mat (m4:* (m4:rotation-y 3.14)
+                        (m4:rotation-x (/ -3.14 2)))
+             :tex (aref samplers (texture-index part))))))
 
 (defun mesh-data->mesh-part (mesh-data)
-  (let ((gstream (make-buffer-stream (vertices mesh-data)
-                                     :index-array (indices mesh-data))))
-    (make-instance 'mesh-part :gstream gstream)))
-
-(defun mesh-datas->mesh (mesh-datas)
-  (make-instance 'mesh
-                 :parts (mapcar #'mesh-data->mesh-part mesh-datas)))
+  (let ((gstream (make-buffer-stream (vertex-data mesh-data)
+                                     :index-array (indices mesh-data)
+                                     :primitive (primitive-type mesh-data))))
+    (make-instance 'mesh-part
+                   :gstream gstream
+                   :texture-index (material-index mesh-data))))
 
 (defun load-file (file-path)
-  (mesh-datas->mesh (scene-meshes->gpu (ai:import-into-lisp file-path))))
+  (let ((scene (ai:import-into-lisp file-path)))
+    (make-instance 'mesh
+                   :parts (mapcar #'mesh-data->mesh-part (scene-meshes->gpu scene))
+                   :samplers (map 'vector #'load-texture (scene->texture-files scene)))))

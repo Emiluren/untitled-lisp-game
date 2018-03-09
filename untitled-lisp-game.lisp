@@ -56,9 +56,6 @@
   (let ((dimensions (v! (aref size 0) (aref size 1))))
     (setf (viewport-resolution (current-viewport)) dimensions)))
 
-(defun load-model (filename)
-  )
-
 (defun run-loop ()
   (setf *running* t
         *array* (make-gpu-array *triangle-data* :element-type 'pos-col)

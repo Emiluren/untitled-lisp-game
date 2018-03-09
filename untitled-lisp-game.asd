@@ -14,5 +14,7 @@
   :serial t
   :components ((:file "package")
                (:file "untitled-lisp-game")
-               (:file "meshes")))
+               (:file "meshes")
+               (:file "model-loading")
+               (:file "textures")))
 
