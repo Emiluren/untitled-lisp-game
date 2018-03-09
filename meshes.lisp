@@ -8,7 +8,7 @@
   ((parts :initform () :initarg :parts :accessor parts)
    (samplers :initform #() :initarg :samplers :accessor samplers)))
 
-(defun-g vert ((vert g-pt) &uniform (mat :mat4))
+(defun-g vert ((vert g-pnt) &uniform (mat :mat4))
   (values (* mat (v! (pos vert) 70))
           (tex vert)))
 
@@ -16,7 +16,7 @@
   (texture tex tc))
 
 (defpipeline-g mesh-prog ()
-  (vert g-pt)
+  (vert g-pnt)
   (frag :vec2))
 
 (defgeneric render (mesh)
@@ -39,10 +39,8 @@
                    :gstream gstream
                    :texture-index (material-index mesh-data))))
 
-(defun load-file (file-path)
-  (let ((scene (ai:import-into-lisp file-path
-                                    :processing-flags '(:ai-process-flip-u-vs
-                                                        :ai-process-flip-winding-order))))
+(defun load-file (file-path &optional flags)
+  (let ((scene (ai:import-into-lisp file-path :processing-flags flags)))
     (make-instance 'mesh
                    :parts (mapcar #'mesh-data->mesh-part (scene-meshes->gpu scene))
                    :samplers (map 'vector #'load-texture (scene->texture-files scene)))))

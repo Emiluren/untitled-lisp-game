@@ -2,10 +2,7 @@
 
 (in-package #:untitled-lisp-game)
 
-(defvar *array* nil)
-(defvar *stream* nil)
 (defvar *test-scene* nil)
-(defvar *test-stream* nil)
 (defvar *running* nil)
 
 (defparameter *triangle-data*
@@ -16,21 +13,6 @@
 (defclass game-object ()
   ((position :initform (v! 0 0 0) :initarg :pos :accessor pos)
    (mesh :initarg :mesh :reader mesh)))
-
-(defstruct-g pos-col
-  (position :vec3 :accessor pos)
-  (color :vec4 :accessor col))
-
-(defun-g vert ((vert pos-col) &uniform (mat :mat4))
-  (values (* mat (v! (pos vert) 1.0))
-          (col vert)))
-
-(defun-g frag ((color :vec4))
-  color)
-
-(defpipeline-g prog-1 ()
-  (vert pos-col)
-  (frag :vec4))
 
 (defun current-window-size ()
   (destructuring-bind (w h)
@@ -46,7 +28,6 @@
   ;; Clear the drawing buffer
   (clear)
   ;; Render data from GPU datastream
-  ;; (map-g #'prog-1 *stream* :mat (m4:translation (v! 0 0 0)))
   (untitled-lisp-game.meshes:render *test-scene*)
   ;; Display newly rendered buffer
   (swap))
@@ -56,11 +37,17 @@
   (let ((dimensions (v! (aref size 0) (aref size 1))))
     (setf (viewport-resolution (current-viewport)) dimensions)))
 
+(defun load-bob ()
+  (setf *test-scene* (untitled-lisp-game.meshes:load-file
+                      "assets/boblampclean.md5mesh"
+                      '(:ai-process-flip-u-vs
+                        :ai-process-flip-winding-order
+                        :ai-process-triangulate
+                        :ai-process-gen-smooth-normals))))
+
 (defun run-loop ()
-  (setf *running* t
-        *array* (make-gpu-array *triangle-data* :element-type 'pos-col)
-        *stream* (make-buffer-stream *array*)
-        *test-scene* (untitled-lisp-game.meshes:load-file "assets/boblampclean.md5mesh"))
+  (setf *running* t)
+  (load-bob)
   ;; Make the viewport fill the whole screen
   (setf (viewport-resolution (current-viewport)) (current-window-size))
   (gl:clear-color 0.2 0.2 0.2 1.0)
