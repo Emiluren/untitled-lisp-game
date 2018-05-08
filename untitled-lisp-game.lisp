@@ -2,13 +2,8 @@
 
 (in-package #:untitled-lisp-game)
 
-(defvar *test-scene* nil)
+(defvar *bob-mesh* nil)
 (defvar *running* nil)
-
-(defparameter *triangle-data*
-   (list (list (v!  0.5 -0.36 0) (v! 0 1 0 1))
-         (list (v!    0   0.5 0) (v! 1 0 0 1))
-         (list (v! -0.5 -0.36 0) (v! 0 0 1 1))))
 
 (defclass game-object ()
   ((position :initform (v! 0 0 0) :initarg :pos :accessor pos)
@@ -28,7 +23,7 @@
   ;; Clear the drawing buffer
   (clear)
   ;; Render data from GPU datastream
-  (untitled-lisp-game.meshes:render *test-scene*)
+  (untitled-lisp-game.meshes:render *bob-mesh*)
   ;; Display newly rendered buffer
   (swap))
 
@@ -38,12 +33,12 @@
     (setf (viewport-resolution (current-viewport)) dimensions)))
 
 (defun load-bob ()
-  (setf *test-scene* (untitled-lisp-game.meshes:load-file
-                      "assets/boblampclean.md5mesh"
-                      '(:ai-process-flip-u-vs
-                        :ai-process-flip-winding-order
-                        :ai-process-triangulate
-                        :ai-process-gen-smooth-normals))))
+  (setf *bob-mesh* (untitled-lisp-game.meshes:load-file
+                    "assets/boblampclean.md5mesh"
+                    '(:ai-process-flip-u-vs
+                      :ai-process-flip-winding-order
+                      :ai-process-triangulate
+                      :ai-process-gen-smooth-normals))))
 
 (defun run-loop ()
   (setf *running* t)
@@ -51,7 +46,8 @@
   ;; Make the viewport fill the whole screen
   (setf (viewport-resolution (current-viewport)) (current-window-size))
   (gl:clear-color 0.2 0.2 0.2 1.0)
-  (skitter:whilst-listening-to ((#'window-size-callback (skitter:window 0) :size))
+  (skitter:whilst-listening-to
+      ((#'window-size-callback (skitter:window 0) :size))
     (loop
        while (and *running*
                   (not (shutting-down-p)))
@@ -59,3 +55,7 @@
 
 (defun stop-loop ()
   (setf *running* nil))
+
+(defun launch ()
+  (cepl:repl)
+  (run-loop))
