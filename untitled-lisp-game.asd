@@ -9,17 +9,19 @@
   :description "Describe untitled-lisp-game here"
   :author "Your Name <your.name@example.com>"
   :license "Specify license here"
-  :depends-on (#:cepl
-               #:cepl.sdl2
+  :depends-on (#:cl-opengl
+               #:glkit
+               #:sdl2kit
+               #:mathkit
+               #:sb-cga
                #:swank
-               #:livesupport
-               #:cepl.skitter.sdl2
                #:classimp
-               #:dirt)
+               #:cl-soil
+	       #:array-operations
+	       #:static-vectors)
   :serial t
   :components ((:file "package")
                (:file "untitled-lisp-game")
-               (:file "model-loading")
                (:file "meshes")
                (:file "textures"))
   :build-operation "asdf:program-op"

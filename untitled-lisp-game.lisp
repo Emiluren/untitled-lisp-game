@@ -2,60 +2,58 @@
 
 (in-package #:untitled-lisp-game)
 
+(defun try-compile-shaders (shaders)
+  (restart-case (compile-shader-dictionary shaders)
+    (retry-shader-compilation () shaders)))
+
 (defvar *bob-mesh* nil)
 (defvar *running* nil)
 
 (defclass game-object ()
-  ((position :initform (v! 0 0 0) :initarg :pos :accessor pos)
+  ((position :initform (kit.math:vec3 0 0 0) :initarg :pos :accessor pos)
    (mesh :initarg :mesh :reader mesh)))
 
-(defun current-window-size ()
-  (destructuring-bind (w h)
-      (cepl.host:window-size (current-surface (cepl-context)))
-    (v! w h)))
-
-;; Here is what we do each frame:
-(defun step-game ()
-  ;; Advance the host environment frame
-  (step-host)
-  ;; Keep the REPL responsive while running
-  (update-repl-link)
-  ;; Clear the drawing buffer
-  (clear)
-  ;; Render data from GPU datastream
-  (untitled-lisp-game.meshes:render *bob-mesh*)
-  ;; Display newly rendered buffer
-  (swap))
-
-(defun window-size-callback (size &rest _)
-  (declare (ignore _))
-  (let ((dimensions (v! (aref size 0) (aref size 1))))
-    (setf (viewport-resolution (current-viewport)) dimensions)))
-
 (defun load-bob ()
-  (setf *bob-mesh* (untitled-lisp-game.meshes:load-file
+  (setf *bob-mesh* (ulg.meshes:load-file
                     "assets/boblampclean.md5mesh"
                     '(:ai-process-flip-u-vs
                       :ai-process-flip-winding-order
                       :ai-process-triangulate
                       :ai-process-gen-smooth-normals))))
 
-(defun run-loop ()
-  (setf *running* t)
-  (load-bob)
-  ;; Make the viewport fill the whole screen
-  (setf (viewport-resolution (current-viewport)) (current-window-size))
-  (gl:clear-color 0.2 0.2 0.2 1.0)
-  (skitter:whilst-listening-to
-      ((#'window-size-callback (skitter:window 0) :size))
-    (loop
-       while (and *running*
-                  (not (shutting-down-p)))
-       do (continuable (step-game)))))
+(defclass vao-shader-window (gl-window)
+  ((view-matrix :initform (kit.glm:ortho-matrix -2 2 -2 2 -2 2))
+   (programs :initform nil)))
 
-(defun stop-loop ()
-  (setf *running* nil))
+(defmethod initialize-instance :after ((w vao-shader-window)
+                                       &key shaders &allow-other-keys)
+  (setf (idle-render w) t)
+  (gl:viewport 0 0 800 600)
+
+  (with-slots (programs) w
+    ;; Compile shaders using the dictionary name specified via :shaders
+    (setf programs (try-compile-shaders shaders)))
+
+  ;; Now that we have a opengl context we can load the mesh
+  (load-bob))
+
+(defmethod render ((window vao-shader-window))
+  (with-slots (view-matrix vao programs) window
+    (gl:clear-color 0.2 0.2 0.2 1.0)
+    (gl:clear :color-buffer)
+
+    ;; Now we just tell GL to draw the contents:
+    (ulg.meshes:render *bob-mesh* programs view-matrix)))
+
+(defdict game-programs ()
+  (program :mesh-prog (:view-m :bone-offsets :tex)
+           (:vertex-shader (:file "shader.vert"))
+           (:fragment-shader (:file "shader.frag"))))
 
 (defun launch ()
-  (cepl:repl)
-  (run-loop))
+  (kit.sdl2:start)
+  (sdl2:in-main-thread ()
+    (sdl2:gl-set-attr :context-major-version 3)
+    (sdl2:gl-set-attr :context-minor-version 3)
+    (sdl2:gl-set-attr :context-profile-mask 1))
+  (make-instance 'vao-shader-window :shaders 'game-programs))
